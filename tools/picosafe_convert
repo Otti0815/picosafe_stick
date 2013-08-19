@@ -1,0 +1,51 @@
+#!/usr/bin/python
+
+from optparse import OptionParser
+from sys import exit, stdout
+from os import linesep
+
+parser = OptionParser(description="This program converts keys saved in picosafe format to lpc format.")
+parser.add_option("-f", "--file",    dest="filename", type="string", help="input key file in picosafe format")
+parser.add_option("-o", "--output",  dest="output",   type="string", help="output key file in lpc format (default: stdout)")
+parser.add_option("-n", "--newline", dest="newline",  action="store_true", help="add trailing newline", default=False)
+
+(options, args) = parser.parse_args()
+
+if not options.filename:
+  print "specify a filename: -f, --file"
+  print
+  parser.print_help()
+  exit(1)
+
+# open file
+try:
+  fh = open(options.filename, "r")
+  content = fh.readline()
+  fh.close()
+except:
+  print "Can't open %s" % filename
+  exit(1)
+
+content = content.strip()
+if len(content) != 34 or content[:2].lower() != "0x":
+  print "keyfile has wrong format"
+  exit(1)
+
+# strip suffix 0x
+content = content[2:]
+
+if options.output:
+  try:
+    out = open(options.output, "w")
+  except:
+    print "Can't open %s for writing" % options.output
+    exit(1)
+else:
+  out = stdout
+
+for i in range(16):
+  c = "0x"+content[2*i]+content[2*i+1]
+  out.write(chr(int(c, 16)))
+
+if options.newline:
+  out.write(linesep)

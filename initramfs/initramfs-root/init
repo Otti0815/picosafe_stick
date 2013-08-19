@@ -1,0 +1,87 @@
+#!/bin/sh
+
+CONFIG=".config"
+# don't change IP_PREFIX here, change geninitramfs.sh instead!
+IP="###IP_PREFIX###.1"
+
+# this is the init script that will be called by the kernel
+
+# create symlinks to busybox programs
+/bin/busybox --install -s
+
+# mount proc and sysfs
+mount -n -t proc proc /proc
+mount -n -t sysfs /sys /sys
+
+mount /dev/mmcblk0p1 /mnt
+if [ -e "/mnt/$CONFIG" ];
+then
+  cat "/mnt/$CONFIG" | filter > /tmp/config
+  . /tmp/config
+  rm /tmp/config
+fi
+umount /mnt
+
+LUNS="/sys/devices/platform/fsl-usb2-udc.0/gadget"
+
+# setup network
+#modprobe g_multi removable=y file=/welcome.img luns=11
+modprobe g_multi removable=y luns=11
+ifconfig usb0 $IP up
+if [ "$WELCOME_IMG" == "y" ]; then
+  echo 1 > "$LUNS/lun0/ro"
+  echo "/welcome.img" > "$LUNS/lun0/file"
+fi
+if [ "$STORAGE" == "y" ]; then
+  echo "/dev/mmcblk0p4" > "$LUNS/lun1/file"
+fi
+
+# start dnsd
+dnsd -d -c /etc/dnsd.conf
+
+# start udhcpd
+mkdir -p /var/lib/misc/ /var/run
+udhcpd /etc/udhcpd.conf
+
+# setuid
+chmod u+s /usr/sbin/cryptsetup-wrapper
+
+# start hiawatha
+mkdir -p /tmp/hiawatha /var/log/hiawatha /var/run/ /var/lib /usr/local
+ln -s /var/ /usr/local/var
+hiawatha -c /etc/hiawatha
+
+# heartbeat for LED
+echo heartbeat > /sys/class/leds/picosafe\:\:blue/trigger
+
+# wait till mounted
+while [ ! -e /dev/mapper/emmentaler ];
+do
+  usleep 100000
+done
+
+echo 11 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio11/direction 
+echo 1 > /sys/class/gpio/gpio11/value
+
+# remove welcome.img
+echo 1 > "$LUNS/lun0/ro"
+echo "" > "$LUNS/lun0/file"
+
+mkdir -p /newroot
+mount /dev/mapper/emmentaler /newroot/
+mkdir -p /newroot/sdcard
+
+rm -rf /newroot/dev/mapper
+cp -a /dev/mapper /newroot/dev
+
+pkill hiawatha
+pkill udhcpd
+pkill dnsd
+
+cd /newroot/
+umount /proc /sys
+
+rm -rf /newroot/etc/rcS.d/*udev*
+
+exec switch_root /newroot /sbin/init

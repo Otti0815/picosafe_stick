@@ -1,0 +1,8 @@
+winetricks vcrun2005
+
+Also needed from nxp:
+SecImgCr.exe  UnsImgCr.exe
+
+Also needed:
+  misc  README
+

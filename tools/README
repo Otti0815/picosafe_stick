@@ -1,0 +1,18 @@
+KOMPILIEREN:
+Die beiden Programme lassen sich durch folgenden Aufruf kompilieren:
+$ make
+
+BESCHREIBUNG:
+rsa_genkey: Das Programm erzeugt ein RSA-Schlüsselpaar bestehend aus Public-
+und Private-Key. Das Programm erzeugt insgesamt drei Ausgabedateien:
+rsa_pub.txt, pubkey.h und rsa_priv.txt. Die ersten beiden Dateien beinhalten
+den Public-Key (rsa_pub.txt im ASCII-Format, pubkey.h für den apex-Bootloader).
+Damit der apex-Bootloader die Signatur des Kernels überprüfen kann, muss der
+Public-Key im apex-Bootloader enthalten sein. Der apex-Bootloader erwartet den
+Public-Key im Binärformat in der Datei apex-secure/apex/include/pubkey.h.
+Wird diese Datei verändert, muss der apex-Bootloader neu kompiliert werden.
+
+rsa_sign: Mit diesem Programm lassen sich Signaturen für Dateien erzeugen.
+Der Aufruf
+$ ./rsa_sign datei
+erzeugt dabei die Signatur datei.sig, die Datei datei wird nicht verändert.

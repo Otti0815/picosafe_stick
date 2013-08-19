@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+	    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+			<title>embedded projects GmbH - FRED</title>
+			<link rel="stylesheet" type="text/css" href="themes/fredgui/css/reset.css" />
+			<link rel="stylesheet" type="text/css" href="themes/fredgui/css/main.css" />
+
+			<link rel="stylesheet" type="text/css" href="js/progressBar/stylesheets/ui.progress-bar.css" />
+				
+			<script type="text/javascript" src="js/jquery-1.8.3.min.js"></script>
+			<script type="text/javascript" src="js/progressBar/javascripts/progress.js"></script>
+
+
+			<script type="text/javascript">
+				function checkEnter(e) {
+					if(e.keyCode == 13) {
+						doLogin();
+					}
+				}
+				
+				function doLogin() {
+					var pw = $('#password').val();
+					$('#password').val('');
+					$('#msg').html('');
+
+					if(pw=='') {
+						$('#msg').html('<b>Please type your password</b>');
+						return;
+					}
+
+					$('#msg').html('<center><img src="./themes/fredgui/images/loader.gif"></center>');
+
+					$.post('./cgi-bin/password.lua', { password: pw }, function(data) {
+						$('#msg').html('');
+						//alert(data.length);
+						//if(data=='ok') 
+						if(data.length==4) 
+							Decrypt();
+						else
+							$('#msg').html('<b>Wrong password!</b>');
+					});	
+				}
+
+				function Decrypt()
+				{
+					$('#loginmask').html('<h4>Decrypting</h4>'
+														 + '<div id="progress_bar" class="ui-progress-bar ui-container" style="width: 95%;margin: 10px auto;"><div class="ui-progress" style="width: 2%;"></div></div>');
+
+					$('#progress_bar .ui-progress').animateProgress(98, 80000, function() {
+						
+						getStatus();	
+					});
+				}
+
+				function getStatus()
+				{
+					$.ajax('index.php', {
+						type: 'POST',
+						statusCode: {
+							200: function() {
+								$('#progress_bar .ui-progress').animateProgress(100, 300, function() {
+									window.location = "index.php";
+								});
+							}
+						},
+						error: function() {
+							setTimeout(getStatus, 2000);
+						}
+					});
+
+				}
+			</script>
+	</head>
+	<body onload="document.getElementById('password').focus();">
+		<div id="wrapper">
+			<div id="top" class="clear">
+				<img src="./themes/fredgui/images/picosafe.png" style="margin-top: 25px;">
+			</div>
+
+			<div id="body" class="clear">
+				<div id="loginmask">
+					<h4>Login</h4>
+						<table width="100%">
+							<tr>
+								<td>Password:</td>
+								<td><input type="password" id="password" style="width: 170px" onkeydown="checkEnter(event)"></td>
+								<td><input type="button" id="submit" style="padding: 3px 5px;" onclick="doLogin()" value="Login"></td>
+							</tr>
+							<tr>	
+								<td></td>
+								<td><div id="msg"></div></td>
+								<td></td>
+							</tr>
+						</table>
+				</div>
+
+			</div>
+
+			<div id="footer-links">
+				<p>&copy; by embedded projects GmbH</p>
+			</div>
+		</div>
+	</body>
+</html>
